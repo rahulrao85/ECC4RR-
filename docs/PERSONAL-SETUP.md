@@ -36,8 +36,16 @@ removed, because those tools accept only the standard skill fields.
 
 ### One shared set of instructions
 
-- **Global:** `my-ecc/AGENTS.md` holds the instructions every agent should
-  follow in every project (communication style, ways of working, safety rules).
+- **Global:** `my-ecc/AGENTS.md` is the one instruction file every agent
+  follows in every project: principles, communication style, ways of working,
+  coding standards, testing, security, safety and external actions, research,
+  Git, and skills. It combines the repository's other instruction files
+  (`AGENTS.md`, `CLAUDE.md`, `SOUL.md`, `.claude/rules/`, `.claude/research/`,
+  `.claude/enterprise/`, `.github/copilot-instructions.md`, `.gemini/GEMINI.md`,
+  `.codex/AGENTS.md`, `.opencode/instructions/`, and `rules/common/`). Where they
+  disagreed, the most recent applicable source won; the decisions are listed in
+  the maintainer notes at the top of the file, which are not copied to the
+  agents. It also states that it takes precedence over older rule files.
   `global` copies it into each tool's global instruction file.
 - **Private:** this repository is public, so anything personal goes in
   `my-ecc/private/AGENTS.md`. Git ignores that folder. Copy
