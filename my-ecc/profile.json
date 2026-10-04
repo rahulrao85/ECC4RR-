@@ -1,6 +1,15 @@
 {
   "version": 1,
-  "description": "Personal ECC profile. Layer 1 (global core) is installed once into the Claude config folder; layer 2 (project sets) is chosen per project by scanning; everything else stays in the on-demand skill library. See docs/PERSONAL-SETUP.md.",
+  "description": "Personal ECC profile. Layer 1 (global core) is installed once into each tool's user folder; layer 2 (project sets) is chosen per project by scanning; everything else stays in the on-demand skill library. Works for Claude Code, Codex, and OpenCode. See docs/PERSONAL-SETUP.md.",
+  "tools": [
+    "claude",
+    "codex",
+    "opencode"
+  ],
+  "instructions": {
+    "shared": "AGENTS.md",
+    "private": "private/AGENTS.md"
+  },
   "stackMappings": "stack-mappings.json",
   "global": {
     "skills": [
@@ -28,11 +37,10 @@
       "save-session",
       "resume-session"
     ],
-    "rules": [
-      "common"
-    ]
+    "rules": ["common"]
   },
   "project": {
+    "sharedInstructions": true,
     "stackAgents": {
       "typescript": ["typescript-reviewer"],
       "javascript": ["typescript-reviewer"],

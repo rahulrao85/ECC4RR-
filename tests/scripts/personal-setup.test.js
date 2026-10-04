@@ -38,10 +38,17 @@ function runTests() {
   let passed = 0;
   let failed = 0;
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'personal-setup-cli-test-'));
-  const fallbackHome = path.join(tmp, 'fallback-claude-home');
+  const fallbackHome = path.join(tmp, 'fallback-home');
   const run = args => spawnSync(process.execPath, [SCRIPT, ...args], {
     encoding: 'utf8',
-    env: { ...process.env, CLAUDE_CONFIG_DIR: fallbackHome },
+    env: {
+      ...process.env,
+      HOME: fallbackHome,
+      USERPROFILE: fallbackHome,
+      CLAUDE_CONFIG_DIR: path.join(fallbackHome, '.claude'),
+      CODEX_HOME: path.join(fallbackHome, '.codex'),
+      OPENCODE_CONFIG_DIR: path.join(fallbackHome, 'opencode'),
+    },
   });
 
   const projects = path.join(tmp, 'Projects');
@@ -68,6 +75,7 @@ function runTests() {
         [['scan', projects, '--depth', 'two'], /--depth must be a whole number/],
         [['scan', path.parse(path.resolve(tmp)).root], /Refusing to scan a whole drive/],
         [['remove'], /Missing project folder/],
+        [['scan', projects, '--tools', 'claude,cursor'], /unknown: cursor/],
       ];
       for (const [args, pattern] of cases) {
         const result = run(args);
@@ -96,6 +104,14 @@ function runTests() {
       assert.ok(result.stdout.includes('plain-repo  [nothing to install]'));
       assert.ok(!fs.existsSync(path.join(pyProject, '.claude')));
     }],
+    ['scan skips the ECC library folder itself', () => {
+      const repoRoot = path.join(__dirname, '..', '..');
+      const result = run(['scan', repoRoot, '--json']);
+      assert.strictEqual(result.status, 0, result.stderr);
+      const payload = JSON.parse(result.stdout);
+      assert.strictEqual(payload.skippedLibrary, true);
+      assert.deepStrictEqual(payload.plans, []);
+    }],
     ['scan --json returns machine-readable plans', () => {
       const result = run(['scan', projects, '--json', '--depth', '1']);
       assert.strictEqual(result.status, 0, result.stderr);
@@ -118,7 +134,11 @@ function runTests() {
       assert.ok(fs.existsSync(path.join(pyProject, '.claude', 'skills', 'fastapi-patterns', 'SKILL.md')));
       assert.ok(fs.existsSync(path.join(pyProject, '.claude', 'rules', 'ecc', 'python')));
       assert.ok(fs.existsSync(path.join(webProject, '.claude', 'agents', 'react-reviewer.md')));
-      assert.ok(!fs.existsSync(path.join(projects, 'plain-repo', '.claude')), 'projects with nothing to install stay untouched');
+      assert.ok(fs.existsSync(path.join(pyProject, '.agents', 'skills', 'fastapi-patterns', 'SKILL.md')), 'Codex and OpenCode copy');
+      assert.ok(fs.readFileSync(path.join(pyProject, 'AGENTS.md'), 'utf8').includes('FastAPI'));
+      assert.ok(fs.readFileSync(path.join(pyProject, 'CLAUDE.md'), 'utf8').includes('@AGENTS.md'));
+      assert.ok(result.stdout.includes('Instructions: AGENTS.md created, CLAUDE.md created'));
+      assert.deepStrictEqual(fs.readdirSync(path.join(projects, 'plain-repo')), ['.git'], 'projects with nothing to install stay untouched');
       const scan = run(['scan', projects]);
       assert.ok(scan.stdout.includes('py-api  [up to date]'));
       assert.ok(scan.stdout.includes('web  [up to date]'));
@@ -131,7 +151,8 @@ function runTests() {
       const added = run(['apply', pyProject, '--with', 'deep-research', '--json']);
       assert.strictEqual(added.status, 0, added.stderr);
       const payload = JSON.parse(added.stdout);
-      assert.deepStrictEqual(payload.outcomes[0].result.added, ['skills/deep-research']);
+      assert.deepStrictEqual(payload.outcomes[0].roots.claude.added, ['skills/deep-research']);
+      assert.deepStrictEqual(payload.outcomes[0].roots.agents.added, ['skills/deep-research']);
       const again = run(['apply', pyProject]);
       assert.strictEqual(again.status, 0, again.stderr);
       assert.ok(fs.existsSync(path.join(pyProject, '.claude', 'skills', 'deep-research', 'SKILL.md')));
@@ -157,27 +178,51 @@ function runTests() {
       assert.strictEqual(result.status, 0, result.stderr);
       assert.ok(result.stdout.startsWith('Removed'));
       assert.ok(!fs.existsSync(path.join(webProject, '.claude', STATE_FILE)));
+      assert.ok(!fs.existsSync(path.join(webProject, 'AGENTS.md')));
+      assert.deepStrictEqual(fs.readdirSync(webProject), ['package.json']);
       assert.ok(run(['remove', webProject]).stdout.startsWith('Nothing to remove'));
     }],
-    ['global installs the core and the skill-library router, and remove --global undoes it', () => {
+    ['apply --tools codex --no-instructions installs only the Codex folder', () => {
+      const solo = path.join(tmp, 'solo');
+      writeFile(path.join(solo, 'go.mod'), 'module x\n');
+      const result = run(['apply', solo, '--tools', 'codex', '--no-instructions']);
+      assert.strictEqual(result.status, 0, result.stderr);
+      assert.ok(result.stdout.includes('Tools: codex'));
+      assert.ok(fs.existsSync(path.join(solo, '.agents', 'skills', 'golang-patterns', 'SKILL.md')));
+      assert.deepStrictEqual(fs.readdirSync(solo).sort(), ['.agents', 'go.mod']);
+    }],
+    ['global installs for every tool with shared instructions, and remove --global undoes it', () => {
       const dry = run(['global', '--home', home, '--dry-run']);
       assert.strictEqual(dry.status, 0, dry.stderr);
       assert.ok(!fs.existsSync(home));
       const result = run(['global', '--home', home]);
       assert.strictEqual(result.status, 0, result.stderr);
-      assert.ok(fs.existsSync(path.join(home, 'skills', 'tdd-workflow', 'SKILL.md')));
-      assert.ok(fs.existsSync(path.join(home, 'commands', 'plan.md')));
-      assert.ok(fs.existsSync(path.join(home, 'rules', 'ecc', 'common')));
-      const router = fs.readFileSync(path.join(home, 'skills', 'skill-library', 'SKILL.md'), 'utf8');
+      assert.ok(fs.existsSync(path.join(home, '.claude', 'skills', 'tdd-workflow', 'SKILL.md')));
+      assert.ok(fs.existsSync(path.join(home, '.claude', 'commands', 'plan.md')));
+      assert.ok(fs.existsSync(path.join(home, '.claude', 'rules', 'ecc', 'common')));
+      assert.ok(fs.existsSync(path.join(home, '.agents', 'skills', 'tdd-workflow', 'SKILL.md')));
+      const router = fs.readFileSync(path.join(home, '.claude', 'skills', 'skill-library', 'SKILL.md'), 'utf8');
       assert.ok(router.includes('name: skill-library'));
       assert.ok(!router.includes('tdd-workflow'), 'global core skills are not listed in the router');
-      assert.ok(fs.existsSync(path.join(home, 'skills', 'skill-library', 'INDEX.md')));
+      assert.ok(fs.existsSync(path.join(home, '.agents', 'skills', 'skill-library', 'INDEX.md')));
+      for (const file of [path.join('.claude', 'CLAUDE.md'), path.join('.codex', 'AGENTS.md'), path.join('.config', 'opencode', 'AGENTS.md')]) {
+        const text = fs.readFileSync(path.join(home, file), 'utf8');
+        assert.ok(text.includes('# Shared Agent Instructions'), file);
+        assert.ok(!text.includes('Maintainer notes'), file);
+      }
       const rerun = run(['global', '--home', home]);
-      assert.ok(rerun.stdout.includes('Added 0'));
+      assert.ok(rerun.stdout.includes('added 0'));
+      const codexOnly = run(['remove', '--global', '--tools', 'codex', '--home', home]);
+      assert.strictEqual(codexOnly.status, 0, codexOnly.stderr);
+      assert.ok(!fs.existsSync(path.join(home, '.codex', 'AGENTS.md')));
+      assert.ok(!fs.existsSync(path.join(home, '.agents', 'skills', 'tdd-workflow')));
+      assert.ok(fs.existsSync(path.join(home, '.claude', 'CLAUDE.md')));
       const removed = run(['remove', '--global', '--home', home]);
       assert.strictEqual(removed.status, 0, removed.stderr);
-      assert.ok(!fs.existsSync(path.join(home, 'skills')));
-      assert.ok(!fs.existsSync(fallbackHome), 'never writes to the default Claude folder when --home is given');
+      assert.ok(!fs.existsSync(path.join(home, '.claude', 'skills')));
+      assert.ok(!fs.existsSync(path.join(home, '.claude', 'CLAUDE.md')));
+      assert.ok(run(['remove', '--global', '--home', home]).stdout.startsWith('Nothing to remove'));
+      assert.ok(!fs.existsSync(fallbackHome), 'never writes to the real user folders when --home is given');
     }],
     ['global honours a custom profile', () => {
       const profilePath = path.join(tmp, 'tiny-profile.json');
@@ -186,7 +231,9 @@ function runTests() {
       const result = run(['global', '--home', tinyHome, '--profile', profilePath]);
       assert.strictEqual(result.status, 0, result.stderr);
       assert.ok(result.stdout.includes('Not in library (skipped): skill:not-real'));
-      assert.deepStrictEqual(fs.readdirSync(path.join(tinyHome, 'skills')).sort(), ['search-first', 'skill-library']);
+      assert.deepStrictEqual(fs.readdirSync(path.join(tinyHome, '.claude', 'skills')).sort(), ['search-first', 'skill-library']);
+      assert.deepStrictEqual(fs.readdirSync(path.join(tinyHome, '.agents', 'skills')).sort(), ['search-first', 'skill-library']);
+      assert.ok(!fs.existsSync(path.join(tinyHome, '.codex')), 'no instructions configured, so no instruction files');
     }],
   ];
 
