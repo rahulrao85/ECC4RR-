@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "description": "Personal stack mappings, merged with config/project-stack-mappings.json by scripts/personal-setup.js (via my-ecc/profile.json). A stack here with the same id as an upstream stack replaces the upstream one. Indicators use the upstream format: a file name (a * wildcard is allowed in the last path segment) and an optional case-insensitive 'contains' text.",
+  "stacks": [
+    {
+      "id": "llm-app",
+      "name": "LLM application",
+      "indicators": [
+        { "file": "package.json", "contains": "@anthropic-ai/sdk" },
+        { "file": "package.json", "contains": "\"openai\":" },
+        { "file": "requirements.txt", "contains": "anthropic" },
+        { "file": "requirements.txt", "contains": "openai" },
+        { "file": "requirements.txt", "contains": "langchain" },
+        { "file": "pyproject.toml", "contains": "anthropic" },
+        { "file": "pyproject.toml", "contains": "openai" },
+        { "file": "pyproject.toml", "contains": "langchain" }
+      ],
+      "rules": [],
+      "skills": ["cost-aware-llm-pipeline", "agent-harness-construction"]
+    },
+    {
+      "id": "mcp-server",
+      "name": "MCP server",
+      "indicators": [
+        { "file": "package.json", "contains": "@modelcontextprotocol/sdk" },
+        { "file": "requirements.txt", "contains": "fastmcp" },
+        { "file": "requirements.txt", "contains": "mcp[cli]" },
+        { "file": "pyproject.toml", "contains": "fastmcp" },
+        { "file": "pyproject.toml", "contains": "mcp[cli]" }
+      ],
+      "rules": [],
+      "skills": ["mcp-server-patterns"]
+    },
+    {
+      "id": "web-scraper",
+      "name": "Web scraper",
+      "indicators": [
+        { "file": "package.json", "contains": "\"puppeteer\":" },
+        { "file": "package.json", "contains": "\"playwright\":" },
+        { "file": "package.json", "contains": "\"cheerio\":" },
+        { "file": "package.json", "contains": "\"crawlee\":" },
+        { "file": "requirements.txt", "contains": "scrapy" },
+        { "file": "requirements.txt", "contains": "beautifulsoup4" },
+        { "file": "requirements.txt", "contains": "selenium" },
+        { "file": "requirements.txt", "contains": "playwright" },
+        { "file": "pyproject.toml", "contains": "scrapy" },
+        { "file": "pyproject.toml", "contains": "beautifulsoup4" },
+        { "file": "pyproject.toml", "contains": "selenium" },
+        { "file": "pyproject.toml", "contains": "playwright" }
+      ],
+      "rules": [],
+      "skills": ["data-scraper-agent"]
+    },
+    {
+      "id": "playwright-e2e",
+      "name": "Playwright end-to-end tests",
+      "indicators": [
+        { "file": "playwright.config.*" },
+        { "file": "package.json", "contains": "@playwright/test" }
+      ],
+      "rules": [],
+      "skills": ["e2e-testing"],
+      "agents": ["e2e-runner"]
+    },
+    {
+      "id": "remotion-video",
+      "name": "Remotion video",
+      "indicators": [
+        { "file": "remotion.config.*" },
+        { "file": "package.json", "contains": "\"remotion\":" },
+        { "file": "package.json", "contains": "@remotion/" }
+      ],
+      "rules": [],
+      "skills": ["remotion-video-creation", "video-editing"]
+    },
+    {
+      "id": "trading-automation",
+      "name": "Trading automation",
+      "indicators": [
+        { "file": "requirements.txt", "contains": "kiteconnect" },
+        { "file": "requirements.txt", "contains": "ccxt" },
+        { "file": "requirements.txt", "contains": "alpaca-py" },
+        { "file": "requirements.txt", "contains": "ib_insync" },
+        { "file": "pyproject.toml", "contains": "kiteconnect" },
+        { "file": "pyproject.toml", "contains": "ccxt" },
+        { "file": "pyproject.toml", "contains": "alpaca-py" },
+        { "file": "pyproject.toml", "contains": "ib_insync" },
+        { "file": "package.json", "contains": "kiteconnect" },
+        { "file": "package.json", "contains": "\"ccxt\":" }
+      ],
+      "rules": [],
+      "skills": ["llm-trading-agent-security"]
+    },
+    {
+      "id": "supabase",
+      "name": "Supabase",
+      "indicators": [
+        { "file": "supabase/config.toml" },
+        { "file": "package.json", "contains": "@supabase/supabase-js" },
+        { "file": "requirements.txt", "contains": "supabase" },
+        { "file": "pyproject.toml", "contains": "supabase" }
+      ],
+      "rules": [],
+      "skills": ["postgres-patterns", "database-migrations"],
+      "agents": ["database-reviewer"]
+    },
+    {
+      "id": "prisma",
+      "name": "Prisma",
+      "indicators": [
+        { "file": "prisma/schema.prisma" }
+      ],
+      "rules": [],
+      "skills": ["prisma-patterns", "database-migrations"],
+      "agents": ["database-reviewer"]
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "description": "Personal ECC profile. Layer 1 (global core) is installed once into each tool's user folder; layer 2 (project sets) is chosen per project by scanning; everything else stays in the on-demand skill library. Works for Claude Code, Codex, and OpenCode. See docs/PERSONAL-SETUP.md.",
+  "tools": [
+    "claude",
+    "codex",
+    "opencode"
+  ],
+  "instructions": {
+    "shared": "AGENTS.md",
+    "private": "private/AGENTS.md"
+  },
+  "stackMappings": "stack-mappings.json",
+  "global": {
+    "skills": [
+      "tdd-workflow",
+      "verification-loop",
+      "search-first",
+      "security-review",
+      "coding-standards",
+      "git-workflow",
+      "codebase-onboarding",
+      "context-budget",
+      "strategic-compact"
+    ],
+    "agents": [
+      "planner",
+      "code-reviewer",
+      "security-reviewer",
+      "build-error-resolver",
+      "tdd-guide"
+    ],
+    "commands": [
+      "plan",
+      "code-review",
+      "build-fix",
+      "save-session",
+      "resume-session"
+    ],
+    "rules": ["common"]
+  },
+  "project": {
+    "sharedInstructions": true,
+    "stackAgents": {
+      "typescript": ["typescript-reviewer"],
+      "javascript": ["typescript-reviewer"],
+      "react": ["react-reviewer"],
+      "nextjs": ["typescript-reviewer"],
+      "python": ["python-reviewer"],
+      "django": ["django-reviewer"],
+      "fastapi": ["fastapi-reviewer"],
+      "golang": ["go-reviewer", "go-build-resolver"],
+      "rust": ["rust-reviewer", "rust-build-resolver"],
+      "java": ["java-reviewer", "java-build-resolver"],
+      "springboot": ["java-reviewer"],
+      "kotlin": ["kotlin-reviewer", "kotlin-build-resolver"],
+      "android": ["kotlin-reviewer"],
+      "swift": ["swift-reviewer"],
+      "dart-flutter": ["flutter-reviewer"],
+      "php-laravel": ["php-reviewer"],
+      "csharp-dotnet": ["csharp-reviewer"],
+      "cpp": ["cpp-reviewer", "cpp-build-resolver"]
+    }
+  },
+  "scan": {
+    "maxDepth": 3,
+    "maxDirectories": 20000,
+    "ignoreDirs": [
+      "node_modules",
+      "venv",
+      "env",
+      "__pycache__",
+      "dist",
+      "build",
+      "out",
+      "target",
+      "vendor",
+      "coverage",
+      "bin",
+      "obj",
+      "Library",
+      "AppData",
+      "Applications",
+      "Windows",
+      "Program Files",
+      "Program Files (x86)",
+      "ProgramData",
+      "$Recycle.Bin",
+      "System Volume Information"
+    ]
+  }
+}
